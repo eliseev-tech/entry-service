@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: entry-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/entries
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: false
+    open-in-view: false
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/V1__init.xml
+
+server:
+  port: 8080

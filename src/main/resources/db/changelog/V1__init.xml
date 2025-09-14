@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <property name="entries.count" value="10000000"/>
+    <property name="position.step" value="1000"/>
+
+    <changeSet id="create-entry-table" author="a.eliseev">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="entry"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="entry">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="entry_pkey" nullable="false"/>
+            </column>
+            <column name="name" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="position" type="BIGINT">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uq_entry_position"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="init-entries" author="a.eliseev" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*)
+                FROM entry
+            </sqlCheck>
+        </preConditions>
+
+        <sql dbms="postgresql">
+            ALTER TABLE entry SET UNLOGGED;
+        </sql>
+
+        <sql dbms="postgresql" endDelimiter=";">
+            INSERT INTO entry(name, position)
+            SELECT 'Entry ' || i::text, (i::bigint * ${position.step}::bigint)
+            FROM generate_series(1::bigint, ${entries.count}::bigint) AS g(i);
+        </sql>
+
+        <sql dbms="postgresql">
+            ALTER TABLE entry SET LOGGED;
+        </sql>
+
+        <sql dbms="postgresql">
+            ANALYZE
+            entry;
+        </sql>
+
+        <rollback>
+            <sql>TRUNCATE TABLE entry;</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
